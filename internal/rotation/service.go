@@ -47,13 +47,12 @@ func (s *Service) Rotate(req model.RotationRequest) (model.RotationResult, error
 	}
 	summary, sensorErr := s.device.DecodeEnvelope(transport)
 	if sensorErr != nil {
-		committed, commitErr := s.controller.FinalizeRotation(req.SensorID, prepared.Rotation.NewVersion, prepared.Rotation.Digest, len(req.Secret), req.Actor)
-		if commitErr != nil {
-			return model.RotationResult{}, commitErr
-		}
-		prepared.Rotation = committedRotation(prepared.Rotation, committed, s.now())
-		prepared.Summary = committed
-		return prepared, nil
+		// The sensor rejected the envelope (e.g. returned a malformed digest).
+		// Do not finalize: surface the sensor's error and leave the previous
+		// active key in place. The rotation stays "pending" and the prepared
+		// envelope stays "prepared", preserving the audit trail recorded by
+		// WrapSecret without writing a spurious success entry.
+		return model.RotationResult{}, fmt.Errorf("sensor rejected envelope: %w", sensorErr)
 	}
 	if summary.SensorID != req.SensorID || summary.Version != prepared.Rotation.NewVersion {
 		return model.RotationResult{}, fmt.Errorf("sensor summary does not match rotation")
