@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "metrics": {
+    "production_loc": 2132,
+    "production_files": 33,
+    "production_packages": 9,
+    "test_files": 10,
+    "production_functions": 155,
+    "decision_points": 313
+  },
+  "persistence": {
+    "module": "go.etcd.io/bbolt",
+    "entities": [
+      "Sensor",
+      "KeyEnvelope",
+      "Rotation",
+      "AuditEntry"
+    ],
+    "reopen_test": "TestPersistenceSurvivesReopen"
+  },
+  "workflows": [
+    {
+      "steps": [
+        "register sensor",
+        "wrap secret",
+        "confirm digest",
+        "record audit"
+      ],
+      "test": "TestKeyRotationWorkflow"
+    },
+    {
+      "steps": [
+        "load controller",
+        "decode envelope",
+        "validate digest",
+        "publish active key"
+      ],
+      "test": "TestEnvelopeWorkflow"
+    },
+    {
+      "steps": [
+        "query history",
+        "filter sensor",
+        "format report",
+        "export audit"
+      ],
+      "test": "TestAuditWorkflow"
+    }
+  ]
+}
